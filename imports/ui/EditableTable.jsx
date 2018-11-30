@@ -69,28 +69,33 @@ class EditableCell extends React.Component {
         if (dataIndex === "date") {
             let date_match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/)
             if (value === "") {
-                console.log("Date Validate: Empty text")
-                this.setState({validateStatus: "error", helpText: "Require date field."})
+                console.log("Date Validate: Require date field.")
+                // this.setState({validateStatus: "error", helpText: "Require date field."})
+                this.setState({validateStatus: "error"})
                 return false
             }
             else if (!date_match) {
-                console.log("Date Validate: Wrong format")
-                this.setState({validateStatus: "error", helpText: "Require format yyyy-mm-dd"})
+                console.log("Date Validate: Require format yyyy-mm-dd\"")
+                // this.setState({validateStatus: "error", helpText: "Require format yyyy-mm-dd"})
+                this.setState({validateStatus: "error"})
                 return false
             }
             else if (date_match && parseInt(date_match[1]) > 2400) {
                 console.log("Date Validate: Require (A.D) Year")
-                this.setState({validateStatus: "error", helpText: "Require (A.D) Year"})
+                // this.setState({validateStatus: "error", helpText: "Require (A.D) Year"})
+                this.setState({validateStatus: "error"})
                 return false
             }
             else if (date_match && parseInt(date_match[2]) > 12) {
                 console.log("Date Validate: Month must be {1,12}")
-                this.setState({validateStatus: "error", helpText: "Month must be {1,12}"})
+                // this.setState({validateStatus: "error", helpText: "Month must be {1,12}"})
+                this.setState({validateStatus: "error"})
                 return false
             }
             else if (date_match && parseInt(date_match[3]) > 31) {
                 console.log("Date Validate: Date must be {1,31}")
-                this.setState({validateStatus: "error", helpText: "Date must be {1,31}"})
+                // this.setState({validateStatus: "error", helpText: "Date must be {1,31}"})
+                this.setState({validateStatus: "error"})
                 return false
             }
             else {
@@ -109,8 +114,9 @@ class EditableCell extends React.Component {
                 this.setState({validateStatus: "success", helpText: null})
             }
             else {
-                console.log("Money Validate: Wrong format")
-                this.setState({validateStatus: "error", helpText: "Require digit xxxx.xx"})
+                console.log("Money Validate: Require digit xxxx.xx")
+                // this.setState({validateStatus: "error", helpText: "Require digit xxxx.xx"})
+                this.setState({validateStatus: "error"})
                 return false
             }
         }
