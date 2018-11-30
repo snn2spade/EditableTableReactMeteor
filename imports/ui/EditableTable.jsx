@@ -25,9 +25,10 @@ class EditableCell extends React.Component {
         editable: PropTypes.bool,
         dataIndex: PropTypes.string,
         handleInsertBelow: PropTypes.func,
-        lastRowIndex: PropTypes.number,
         nextFocus: PropTypes.number,
-        cleanNextFocus: PropTypes.func
+        cleanNextFocus: PropTypes.func,
+        addCellListener: PropTypes.func,
+        removeCellListener: PropTypes.func
     }
 
     state = {
@@ -38,11 +39,11 @@ class EditableCell extends React.Component {
     constructor(props) {
         super(props)
         this.onPressEnter = this.onPressEnter.bind(this)
-        this.onChange = this.onChange.bind(this)
+        this.validateCell = this.validateCell.bind(this)
     }
 
     checkNextFocus() {
-        if (this.props.record !== undefined && this.props.record.key === this.props.nextFocus && this.props.dataIndex === "date") {
+        if (this.props.record !== undefined && this.props.record.no === this.props.nextFocus && this.props.dataIndex === "date") {
             this.input.focus();
             this.props.cleanNextFocus();
         }
@@ -50,6 +51,16 @@ class EditableCell extends React.Component {
 
     componentDidMount() {
         this.checkNextFocus()
+        if (this.props.addCellListener !== undefined) {
+            this.props.addCellListener(this)
+        }
+    }
+
+    componentWillUnmount() {
+        console.log("[EditableCell] will unmount")
+        if (this.props.removeCellListener !== undefined) {
+            this.props.removeCellListener(this.props.record.key)
+        }
     }
 
     componentDidUpdate() {
@@ -62,9 +73,9 @@ class EditableCell extends React.Component {
         this.props.handleInsertBelow(this.props.record.key)
     }
 
-    onChange(e) {
+    validateCell() {
         this.setState({validateStatus: "validating"})
-        let value = e.target.value
+        let value = this.input.props.value
         const {record, handleSaveCell, dataIndex} = this.props;
         if (dataIndex === "date") {
             let date_match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/)
@@ -133,9 +144,10 @@ class EditableCell extends React.Component {
             index,
             handleSaveCell,
             handleInsertBelow,
-            lastRowIndex,
             nextFocus,
             cleanNextFocus,
+            addCellListener,
+            removeCellListener,
             ...restProps
         } = this.props;
         return (
@@ -154,7 +166,7 @@ class EditableCell extends React.Component {
                                         <Input
                                             ref={node => (this.input = node)}
                                             onPressEnter={this.onPressEnter}
-                                            onChange={this.onChange}
+                                            onChange={this.validateCell}
                                         />
                                     )}
                                 </FormItem>
@@ -175,7 +187,8 @@ class EditableTable extends React.Component {
             {
                 title: '',
                 key: 'no',
-                render: (text, record) => <span>{record.key}</span>,
+                dataIndex: 'no',
+                // render: (text, record) => <span>{record.no}</span>,
                 width: 50
             }, {
                 title: 'date',
@@ -222,11 +235,14 @@ class EditableTable extends React.Component {
             dataSource: [],
             count: 0,
             isInitialDataLoaded: false,
-            nextFocus: null
+            nextFocus: null,
+            cellListenerList: []
         };
-        this.resetDataRowIndex = this.resetDataRowIndex.bind(this)
+        this.resetDataRowNo = this.resetDataRowNo.bind(this)
         this.onClickVerifyAndSave = this.onClickVerifyAndSave.bind(this)
         this.cleanNextFocus = this.cleanNextFocus.bind(this)
+        this.addCellListener = this.addCellListener.bind(this)
+        this.removeCellListener = this.removeCellListener.bind(this)
     }
 
     componentDidUpdate() {
@@ -235,17 +251,26 @@ class EditableTable extends React.Component {
         if (this.props.docsReadyYet && !this.state.isInitialDataLoaded) {
             console.log("Doc Ready!")
             let transactions = this.props.document["transactions"]
+            // set up transactions no. and key
             for (let i = 0; i < transactions.length; i++) {
                 transactions[i]["key"] = i
+                transactions[i]["no"] = i
             }
             this.setState({dataSource: transactions, count: transactions.length})
             this.state.isInitialDataLoaded = true
         }
-        // console.log("get form")
-        // console.log(this.props.form)
-        // if (this.props.form !== undefined) {
-        //     console.log(this.props.form.getFieldsError())
-        // }
+    }
+
+    addCellListener(cell) {
+        let cellListenerList = this.state.cellListenerList
+        cellListenerList.push(cell)
+        this.setState({callListenerList: cellListenerList})
+    }
+
+    removeCellListener(key) {
+        let cellListenerList = this.state.cellListenerList
+        cellListenerList = cellListenerList.filter(c => (c.props.record.key !== key));
+        this.setState({cellListenerList: cellListenerList})
     }
 
     componentDidMount() {
@@ -259,6 +284,7 @@ class EditableTable extends React.Component {
     createNewData(key) {
         let newData = {
             key: key,
+            no: '',
             date: '',
             debit: '',
             credit: '',
@@ -267,40 +293,47 @@ class EditableTable extends React.Component {
         return newData
     }
 
-    resetDataRowIndex(dataSource) {
-        for (let i = 0; i < dataSource.length; i++) {
-            dataSource[i]["key"] = i
-        }
-    }
-
     handleInsertAbove = (key) => {
         let {count, dataSource} = this.state;
         let index = dataSource.findIndex(item => key === item.key);
-        dataSource.splice(index, 0, this.createNewData(index))
-        this.resetDataRowIndex(dataSource)
+        let no = dataSource[index].no;
+        dataSource.splice(index, 0, this.createNewData(count))
+        this.resetDataRowNo(dataSource)
         this.setState({
             dataSource: dataSource,
             count: count + 1,
-            nextFocus: index
+            nextFocus: no
         });
 
     }
+
+    /**
+     * Reset transaction no.
+     * @param dataSource
+     */
+    resetDataRowNo(dataSource) {
+        for (let i = 0; i < dataSource.length; i++) {
+            dataSource[i]["no"] = i
+        }
+    }
+
     handleInsertBelow = (key) => {
         let {count, dataSource} = this.state;
-        let index = dataSource.findIndex(item => key === item.key) + 1;
-        dataSource.splice(index, 0, this.createNewData(index))
-        this.resetDataRowIndex(dataSource)
+        let index = dataSource.findIndex(item => key === item.key);
+        let no = dataSource[index].no;
+        dataSource.splice(index + 1, 0, this.createNewData(count))
+        this.resetDataRowNo(dataSource)
         this.setState({
             dataSource: dataSource,
             count: count + 1,
-            nextFocus: index
+            nextFocus: no + 1
         });
     }
 
     handleDelete = (key) => {
         const dataSource = [...this.state.dataSource];
         let dataSourceNew = dataSource.filter(item => item.key !== key)
-        this.resetDataRowIndex(dataSourceNew)
+        this.resetDataRowNo(dataSourceNew)
         this.setState({dataSource: dataSourceNew, nextFocus: null});
     }
 
@@ -308,7 +341,7 @@ class EditableTable extends React.Component {
         const {count, dataSource} = this.state;
         const newData = this.createNewData(count)
         let dataSourceNew = [...dataSource, newData]
-        this.resetDataRowIndex(dataSourceNew)
+        this.resetDataRowNo(dataSourceNew)
         this.setState({
             dataSource: dataSourceNew,
             count: count + 1,
@@ -325,25 +358,44 @@ class EditableTable extends React.Component {
     }
 
     onClickVerifyAndSave(event) {
-        console.log("[EditableTable] Click Verify And Save ")
-        event.preventDefault()
-        Meteor.call('sendVerifyAndSaveRequest', this.props.document._id, this.state.dataSource, (err, result) => {
-            console.log("Callback from Meteor method 'sendVerifyAndSaveRequest'")
-            if (err) {
-                iziToast.error({
-                    title: 'Error',
-                    message: 'Verify failed, ...',
-                    position: 'topRight'
-                });
+        console.log("[EditableTable] Click Verify And Save ");
+        event.preventDefault();
+        let haveFailValidated = false;
+        for (let i = 0; i < this.state.cellListenerList.length; i++) {
+            let cell = this.state.cellListenerList[i]
+            if (!cell.validateCell() && !haveFailValidated) {
+                cell.input.input.focus();
+                haveFailValidated = true
             }
-            else {
-                iziToast.success({
-                    title: 'Success',
-                    message: 'Verify Passed, Saved',
-                    position: 'topRight'
-                });
-            }
-        })
+        }
+        if (!haveFailValidated) {
+            Meteor.call('sendVerifyAndSaveRequest', this.props.document._id, this.state.dataSource, (err, result) => {
+                console.log("Callback from Meteor method 'sendVerifyAndSaveRequest'")
+                if (err) {
+                    iziToast.error({
+                        title: 'Error',
+                        message: 'Verify failed, ...',
+                        position: 'topRight'
+                    });
+                }
+                else {
+                    iziToast.success({
+                        title: 'Success',
+                        message: 'Verify Passed, Saved',
+                        position: 'topRight'
+                    });
+                }
+            })
+            return true
+        }
+        else {
+            iziToast.error({
+                title: 'Error',
+                message: 'Have validated fail fields',
+                position: 'topRight'
+            });
+            return false
+        }
     }
 
     render() {
@@ -360,21 +412,24 @@ class EditableTable extends React.Component {
             }
             return {
                 ...col,
-                onCell: record => ({
-                    record,
-                    editable: col.editable,
-                    dataIndex: col.dataIndex,
-                    title: col.title,
-                    handleSaveCell: this.handleSaveCell,
-                    handleInsertBelow: this.handleInsertBelow,
-                    lastRowIndex: (this.state.count - 1),
-                    nextFocus: this.state.nextFocus,
-                    cleanNextFocus: this.cleanNextFocus
-                }),
+                onCell: record => {
+                    return {
+                        record,
+                        editable: col.editable,
+                        dataIndex: col.dataIndex,
+                        title: col.title,
+                        handleSaveCell: this.handleSaveCell,
+                        handleInsertBelow: this.handleInsertBelow,
+                        nextFocus: this.state.nextFocus,
+                        cleanNextFocus: this.cleanNextFocus,
+                        addCellListener: this.addCellListener,
+                        removeCellListener: this.removeCellListener
+                    }
+                },
             };
         });
         return (
-            <div>
+            <Form>
                 <Button onClick={this.handleAdd} type="primary"
                         style={{marginBottom: 16}}>
                     <Icon type="plus-circle"/> Add row
@@ -392,10 +447,12 @@ class EditableTable extends React.Component {
                         <Icon type="check-circle"/>Verify and Save
                     </Button>
                 </div>
-            </div>
+            </Form>
         );
     }
 }
+
+// const WrappedFormEditableTable = Form.create()(EditableTable);
 
 export default EditableTableContainer = withTracker(() => {
     const document_handle = Meteor.subscribe('document.all', (err) => {
