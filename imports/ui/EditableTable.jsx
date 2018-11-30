@@ -202,11 +202,14 @@ class EditableTable extends React.Component {
         event.preventDefault();
         let haveFailValidated = false;
         let cellListenList = this.state.cellListenerList
+        let firstHelpText = ""
         cellListenList.sort((a, b) => (a.props.record.no - b.props.record.no))
         for (let i = 0; i < cellListenList.length; i++) {
             let cell = cellListenList[i]
-            if (!cell.validateCell() && !haveFailValidated) {
+            let validateCellResult = cell.validateCell()
+            if (!validateCellResult[0] && !haveFailValidated) {
                 cell.input.input.focus();
+                firstHelpText = validateCellResult[1]
                 haveFailValidated = true
             }
         }
@@ -233,7 +236,7 @@ class EditableTable extends React.Component {
         else {
             iziToast.error({
                 title: 'Error',
-                message: 'Have validated fail fields',
+                message: firstHelpText,
                 position: 'topRight'
             });
             return false
