@@ -104,7 +104,7 @@ class EditableTable extends React.Component {
     addCellListener(cell) {
         let cellListenerList = this.state.cellListenerList
         cellListenerList.push(cell)
-        this.setState({callListenerList: cellListenerList})
+        this.setState({cellListenerList: cellListenerList})
     }
 
     removeCellListener(key) {
