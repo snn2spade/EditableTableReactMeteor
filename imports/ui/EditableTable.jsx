@@ -47,9 +47,11 @@ class EditableCell extends React.Component {
             this.props.cleanNextFocus();
         }
     }
-    componentDidMount(){
+
+    componentDidMount() {
         this.checkNextFocus()
     }
+
     componentDidUpdate() {
         console.log("[EditableCell] call componentDidUpdate")
         this.checkNextFocus()
@@ -367,8 +369,9 @@ class EditableTable extends React.Component {
         });
         return (
             <div>
-                <Button onClick={this.handleAdd} type="primary" style={{marginBottom: 16}}>
-                    Add a row
+                <Button onClick={this.handleAdd} type="primary"
+                        style={{marginBottom: 16}}>
+                    <Icon type="plus-circle"/> Add row
                 </Button>
                 {this.props.docsReadyYet ?
                     <Table
@@ -378,9 +381,11 @@ class EditableTable extends React.Component {
                         dataSource={this.state.dataSource}
                         columns={columns}
                     /> : <div>Loading...</div>}
-                <Button type="primary" onClick={this.onClickVerifyAndSave}>
-                    <Icon type="check-circle"/>Verify and Save
-                </Button>
+                <div style={{textAlign: "center"}}>
+                    <Button type="primary" onClick={this.onClickVerifyAndSave}>
+                        <Icon type="check-circle"/>Verify and Save
+                    </Button>
+                </div>
             </div>
         );
     }
