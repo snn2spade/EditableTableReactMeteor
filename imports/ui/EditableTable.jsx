@@ -1,5 +1,5 @@
 import 'antd/dist/antd.css';
-import {Table, Button, Form, Divider, Icon} from 'antd';
+import {Table, Button, Form, Divider, Icon, Tag} from 'antd';
 import React from 'react'
 import PropTypes from 'prop-types';
 import './EditableTable.css'
@@ -94,7 +94,7 @@ class EditableTable extends React.Component {
             // set up transactions no. and key
             for (let i = 0; i < transactions.length; i++) {
                 transactions[i]["key"] = i
-                transactions[i]["no"] = i
+                transactions[i]["no"] = i + 1
             }
             this.setState({dataSource: transactions, count: transactions.length})
             this.state.isInitialDataLoaded = true
@@ -102,12 +102,14 @@ class EditableTable extends React.Component {
     }
 
     addCellListener(cell) {
+        console.log("Add listener: " + cell.props.record.key)
         let cellListenerList = this.state.cellListenerList
         cellListenerList.push(cell)
         this.setState({cellListenerList: cellListenerList})
     }
 
     removeCellListener(key) {
+        console.log("Remove listener: " + key)
         let cellListenerList = this.state.cellListenerList
         cellListenerList = cellListenerList.filter(c => (c.props.record.key !== key));
         this.setState({cellListenerList: cellListenerList})
@@ -153,7 +155,7 @@ class EditableTable extends React.Component {
      */
     resetDataRowNo(dataSource) {
         for (let i = 0; i < dataSource.length; i++) {
-            dataSource[i]["no"] = i
+            dataSource[i]["no"] = i + 1
         }
     }
 
@@ -277,7 +279,7 @@ class EditableTable extends React.Component {
             <Form>
                 <Button onClick={this.handleAdd} type="primary"
                         style={{marginBottom: 16}}>
-                    <Icon type="plus-circle"/> Add row
+                    <Icon type="plus"/> Add row
                 </Button>
                 {this.props.docsReadyYet ?
                     <Table
@@ -287,10 +289,16 @@ class EditableTable extends React.Component {
                         bordered
                         dataSource={this.state.dataSource}
                         columns={columns}
+                        pagination={{
+                            showSizeChanger: true,
+                            pageSizeOptions: ['10', '15', '20', '40', '100'],
+                            showTotal: total => <span><Tag color="blue">Total {total}</Tag><Divider
+                                type="vertical"/></span>
+                        }}
                     /> : <div>Loading...</div>}
                 <div style={{textAlign: "center"}}>
                     <Button type="primary" onClick={this.onClickVerifyAndSave}>
-                        <Icon type="check-circle"/>Verify and Save
+                        <Icon type="check"/>Verify and Save
                     </Button>
                 </div>
             </Form>
