@@ -1,6 +1,13 @@
 import 'antd/dist/antd.css';
-import {Table, Input, Button, Popconfirm, Form} from 'antd';
+import {Table, Input, Button, Form, Divider, Icon} from 'antd';
 import React from 'react'
+import PropTypes from 'prop-types';
+import './EditableTable.css'
+import {withTracker} from 'meteor/react-meteor-data';
+import Document from "../api/Document.js";
+import {Meteor} from "meteor/meteor";
+import iziToast from 'iziToast';
+import 'izitoast/dist/css/iziToast.min.css'
 
 const FormItem = Form.Item;
 const EditableContext = React.createContext();
@@ -13,189 +20,322 @@ const EditableRow = ({form, index, ...props}) => (
 const EditableFormRow = Form.create()(EditableRow);
 
 class EditableCell extends React.Component {
+    static propTypes = {
+        record: PropTypes.object,
+        editable: PropTypes.bool,
+        dataIndex: PropTypes.string,
+        handleInsertBelow: PropTypes.func,
+        lastRowIndex: PropTypes.number,
+        nextFocus: PropTypes.number,
+        cleanNextFocus: PropTypes.func
+    }
+
     state = {
-        editing: false,
+        validateStatus: "success",
+        helpText: null
     }
 
-    componentDidMount() {
-        if (this.props.editable) {
-            document.addEventListener('click', this.handleClickOutside, true);
+    constructor(props) {
+        super(props)
+        this.onPressEnter = this.onPressEnter.bind(this)
+        this.onChange = this.onChange.bind(this)
+    }
+
+    checkNextFocus() {
+        if (this.props.record !== undefined && this.props.record.key === this.props.nextFocus && this.props.dataIndex === "date") {
+            this.input.focus();
+            this.props.cleanNextFocus();
         }
     }
-
-    componentWillUnmount() {
-        if (this.props.editable) {
-            document.removeEventListener('click', this.handleClickOutside, true);
-        }
+    componentDidMount(){
+        this.checkNextFocus()
+    }
+    componentDidUpdate() {
+        console.log("[EditableCell] call componentDidUpdate")
+        this.checkNextFocus()
     }
 
-    toggleEdit = () => {
-        const editing = !this.state.editing;
-        this.setState({editing}, () => {
-            if (editing) {
-                this.input.focus();
+    onPressEnter(event) {
+        console.log("[EditableCell] On Press Enter")
+        this.props.handleInsertBelow(this.props.record.key)
+    }
+
+    onChange(e) {
+        this.setState({validateStatus: "validating"})
+        let value = e.target.value
+        const {record, handleSaveCell, dataIndex} = this.props;
+        if (dataIndex === "date") {
+            let date_match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+            if (value === "") {
+                console.log("Date Validate: Empty text")
+                this.setState({validateStatus: "error", helpText: "Require date field."})
+                return false
             }
-        });
-    }
-
-    handleClickOutside = (e) => {
-        const {editing} = this.state;
-        if (editing && this.cell !== e.target && !this.cell.contains(e.target)) {
-            this.save();
-        }
-    }
-
-    save = () => {
-        const {record, handleSave} = this.props;
-        this.form.validateFields((error, values) => {
-            if (error) {
-                return;
+            else if (!date_match) {
+                console.log("Date Validate: Wrong format")
+                this.setState({validateStatus: "error", helpText: "Require format yyyy-mm-dd"})
+                return false
             }
-            this.toggleEdit();
-            handleSave({...record, ...values});
-        });
+            else if (date_match && parseInt(date_match[1]) > 2400) {
+                console.log("Date Validate: Require (A.D) Year")
+                this.setState({validateStatus: "error", helpText: "Require (A.D) Year"})
+                return false
+            }
+            else if (date_match && parseInt(date_match[2]) > 12) {
+                console.log("Date Validate: Month must be {1,12}")
+                this.setState({validateStatus: "error", helpText: "Month must be {1,12}"})
+                return false
+            }
+            else if (date_match && parseInt(date_match[3]) > 31) {
+                console.log("Date Validate: Date must be {1,31}")
+                this.setState({validateStatus: "error", helpText: "Date must be {1,31}"})
+                return false
+            }
+            else {
+                this.setState({validateStatus: "success", helpText: null})
+                console.log("Date Validate: Success")
+            }
+        }
+        else {
+            let money_match = value.match(/^(\d*\.?\d+)$/)
+            if (value !== "" && money_match) {
+                console.log("Money Validate: Success")
+                this.setState({validateStatus: "success", helpText: null})
+            }
+            else if (value === "") {
+                console.log("Money Validate: Success")
+                this.setState({validateStatus: "success", helpText: null})
+            }
+            else {
+                console.log("Money Validate: Wrong format")
+                this.setState({validateStatus: "error", helpText: "Require digit xxxx.xx"})
+                return false
+            }
+        }
+        handleSaveCell(record.key, dataIndex, value)
+        return true
     }
 
     render() {
-        const {editing} = this.state;
         const {
             editable,
             dataIndex,
             title,
             record,
             index,
-            handleSave,
+            handleSaveCell,
+            handleInsertBelow,
+            lastRowIndex,
+            nextFocus,
+            cleanNextFocus,
             ...restProps
         } = this.props;
         return (
             <td ref={node => (this.cell = node)} {...restProps}>
-                {editable ? (
+                {editable ?
                     <EditableContext.Consumer>
                         {(form) => {
                             this.form = form;
-                            return (
-                                editing ? (
-                                    <FormItem style={{margin: 0}}>
-                                        {form.getFieldDecorator(dataIndex, {
-                                            rules: [{
-                                                required: true,
-                                                message: `${title} is required.`,
-                                            }],
-                                            initialValue: record[dataIndex],
-                                        })(
-                                            <Input
-                                                ref={node => (this.input = node)}
-                                                onPressEnter={this.save}
-                                            />
-                                        )}
-                                    </FormItem>
-                                ) : (
-                                    <div
-                                        className="editable-cell-value-wrap"
-                                        style={{paddingRight: 24}}
-                                        onClick={this.toggleEdit}
-                                    >
-                                        {restProps.children}
-                                    </div>
-                                )
-                            );
+                            return <div>
+                                <FormItem style={{margin: 0}} hasFeedback={this.state.validateStatus === "error"}
+                                          validateStatus={this.state.validateStatus}
+                                          help={this.state.helpText}>
+                                    {form.getFieldDecorator(dataIndex, {
+                                        initialValue: record[dataIndex]
+                                    })(
+                                        <Input
+                                            ref={node => (this.input = node)}
+                                            onPressEnter={this.onPressEnter}
+                                            onChange={this.onChange}
+                                        />
+                                    )}
+                                </FormItem>
+                            </div>
                         }}
                     </EditableContext.Consumer>
-                ) : restProps.children}
+                    : restProps.children}
             </td>
         );
     }
 }
 
-export default class EditableTable extends React.Component {
-    componentDidUpdate() {
-        console.log("Call [EditableTable] componentDidUpdate")
-        console.log(this.state.dataSource)
+class EditableTable extends React.Component {
+    constructor(props) {
+        console.log("[EditableTable] Call constructor")
+        super(props);
+        this.columns = [
+            {
+                title: '',
+                key: 'no',
+                render: (text, record) => <span>{record.key}</span>,
+                width: 50
+            }, {
+                title: 'date',
+                dataIndex: 'date',
+                width: 200,
+                editable: true,
+            }, {
+                title: 'debit',
+                dataIndex: 'debit',
+                width: 200,
+                editable: true,
+            }, {
+                title: 'credit',
+                dataIndex: 'credit',
+                width: 200,
+                editable: true,
+            }, {
+                title: 'balance',
+                dataIndex: 'balance',
+                width: 200,
+                editable: true,
+            }, {
+                title: '',
+                dataIndex: 'action',
+                width: 200,
+                render: (text, record) => {
+                    return (
+                        this.state.dataSource.length >= 1
+                            ? (<span>
+                        <span className={"link"} onClick={() => this.handleInsertAbove(record.key)} href="javascript:;">
+                            <Icon type="up"/>
+                            </span>
+                        <Divider type="vertical"/>
+                        <span className={"link"} onClick={() => this.handleInsertBelow(record.key)} href="javascript:;">  <Icon
+                            type="down"/></span>
+                        <Divider type="vertical"/>
+                        <span className={"link"} style={{color: 'red'}} onClick={() => this.handleDelete(record.key)}
+                              href="javascript:;">  <Icon type="delete"/></span>
+                            </span>) : null
+                    );
+                },
+            }];
+        this.state = {
+            dataSource: [],
+            count: 0,
+            isInitialDataLoaded: false,
+            nextFocus: null
+        };
+        this.resetDataRowIndex = this.resetDataRowIndex.bind(this)
+        this.onClickVerifyAndSave = this.onClickVerifyAndSave.bind(this)
+        this.cleanNextFocus = this.cleanNextFocus.bind(this)
     }
 
-    constructor(props) {
-        super(props);
-        this.columns = [{
-            title: 'date',
-            dataIndex: 'date',
-            width: '20%',
-            editable: true,
-        }, {
-            title: 'debit',
-            dataIndex: 'debit',
-            width: '20%',
-            editable: true,
-        }, {
-            title: 'credit',
-            dataIndex: 'credit',
-            width: '20%',
-            editable: true,
-        }, {
-            title: 'balance',
-            dataIndex: 'balance',
-            width: '20%',
-            editable: true,
-        }, {
-            title: 'action',
-            dataIndex: 'action',
-            width: '20%',
-            render: (text, record) => {
-                return (
-                    this.state.dataSource.length >= 1
-                        ? (
-                            <a onClick={() => this.handleDelete(record.key)} href="javascript:;">Delete</a>
-                        ) : null
-                );
-            },
-        }];
+    componentDidUpdate() {
+        console.log("Call [EditableTable] componentDidUpdate")
+        console.log(this.state)
+        if (this.props.docsReadyYet && !this.state.isInitialDataLoaded) {
+            console.log("Doc Ready!")
+            let transactions = this.props.document["transactions"]
+            for (let i = 0; i < transactions.length; i++) {
+                transactions[i]["key"] = i
+            }
+            this.setState({dataSource: transactions, count: transactions.length})
+            this.state.isInitialDataLoaded = true
+        }
+        // console.log("get form")
+        // console.log(this.props.form)
+        // if (this.props.form !== undefined) {
+        //     console.log(this.props.form.getFieldsError())
+        // }
+    }
 
-        this.state = {
-            dataSource: [{
-                key: 0,
-                date: '2018-01-01',
-                debit: '125.5',
-                credit: '',
-                balance: '1111.0'
-            }, {
-                key: 1,
-                date: '2018-01-01',
-                debit: '425.5',
-                credit: '',
-                balance: '3311.0'
-            }],
-            count: 2,
+    componentDidMount() {
+        console.log("Call [EditableTable] componentDidMount")
+    }
+
+    cleanNextFocus() {
+        this.setState({nextFocus: null})
+    }
+
+    createNewData(key) {
+        let newData = {
+            key: key,
+            date: '',
+            debit: '',
+            credit: '',
+            balance: ''
         };
+        return newData
+    }
+
+    resetDataRowIndex(dataSource) {
+        for (let i = 0; i < dataSource.length; i++) {
+            dataSource[i]["key"] = i
+        }
+    }
+
+    handleInsertAbove = (key) => {
+        let {count, dataSource} = this.state;
+        let index = dataSource.findIndex(item => key === item.key);
+        dataSource.splice(index, 0, this.createNewData(index))
+        this.resetDataRowIndex(dataSource)
+        this.setState({
+            dataSource: dataSource,
+            count: count + 1,
+            nextFocus: index
+        });
+
+    }
+    handleInsertBelow = (key) => {
+        let {count, dataSource} = this.state;
+        let index = dataSource.findIndex(item => key === item.key) + 1;
+        dataSource.splice(index, 0, this.createNewData(index))
+        this.resetDataRowIndex(dataSource)
+        this.setState({
+            dataSource: dataSource,
+            count: count + 1,
+            nextFocus: index
+        });
     }
 
     handleDelete = (key) => {
         const dataSource = [...this.state.dataSource];
-        this.setState({dataSource: dataSource.filter(item => item.key !== key)});
+        let dataSourceNew = dataSource.filter(item => item.key !== key)
+        this.resetDataRowIndex(dataSourceNew)
+        this.setState({dataSource: dataSourceNew, nextFocus: null});
     }
 
     handleAdd = () => {
         const {count, dataSource} = this.state;
-        const newData = {
-            key: count,
-            date: '2018-01-01',
-            debit: '425.5',
-            credit: '',
-            balance: '3311.0'
-        };
+        const newData = this.createNewData(count)
+        let dataSourceNew = [...dataSource, newData]
+        this.resetDataRowIndex(dataSourceNew)
         this.setState({
-            dataSource: [...dataSource, newData],
+            dataSource: dataSourceNew,
             count: count + 1,
+            nextFocus: count
         });
     }
 
-    handleSave = (row) => {
+    handleSaveCell = (key, dataIndex, value) => {
+        console.log("[EditableTable] Handle save cell")
         const newData = [...this.state.dataSource];
-        const index = newData.findIndex(item => row.key === item.key);
-        const item = newData[index];
-        newData.splice(index, 1, {
-            ...item,
-            ...row,
-        });
+        const index = newData.findIndex(item => key === item.key);
+        newData[index][dataIndex] = value
         this.setState({dataSource: newData});
+    }
+
+    onClickVerifyAndSave(event) {
+        console.log("[EditableTable] Click Verify And Save ")
+        event.preventDefault()
+        Meteor.call('sendVerifyAndSaveRequest', this.props.document._id, this.state.dataSource, (err, result) => {
+            console.log("Callback from Meteor method 'sendVerifyAndSaveRequest'")
+            if (err) {
+                iziToast.error({
+                    title: 'Error',
+                    message: 'Verify failed, ...',
+                    position: 'topRight'
+                });
+            }
+            else {
+                iziToast.success({
+                    title: 'Success',
+                    message: 'Verify Passed, Saved',
+                    position: 'topRight'
+                });
+            }
+        })
     }
 
     render() {
@@ -217,7 +357,11 @@ export default class EditableTable extends React.Component {
                     editable: col.editable,
                     dataIndex: col.dataIndex,
                     title: col.title,
-                    handleSave: this.handleSave,
+                    handleSaveCell: this.handleSaveCell,
+                    handleInsertBelow: this.handleInsertBelow,
+                    lastRowIndex: (this.state.count - 1),
+                    nextFocus: this.state.nextFocus,
+                    cleanNextFocus: this.cleanNextFocus
                 }),
             };
         });
@@ -226,14 +370,30 @@ export default class EditableTable extends React.Component {
                 <Button onClick={this.handleAdd} type="primary" style={{marginBottom: 16}}>
                     Add a row
                 </Button>
-                <Table
-                    components={components}
-                    rowClassName={() => 'editable-row'}
-                    bordered
-                    dataSource={dataSource}
-                    columns={columns}
-                />
+                {this.props.docsReadyYet ?
+                    <Table
+                        components={components}
+                        rowClassName={() => 'editable-row'}
+                        bordered
+                        dataSource={this.state.dataSource}
+                        columns={columns}
+                    /> : <div>Loading...</div>}
+                <Button type="primary" onClick={this.onClickVerifyAndSave}>
+                    <Icon type="check-circle"/>Verify and Save
+                </Button>
             </div>
         );
     }
 }
+
+export default EditableTableContainer = withTracker(() => {
+    const document_handle = Meteor.subscribe('document.all', (err) => {
+        console.log("Call back after subscribe")
+    });
+    const docsReadyYet = document_handle.ready();
+    const document = Document.findOne()
+    return {
+        docsReadyYet,
+        document
+    };
+})(EditableTable);

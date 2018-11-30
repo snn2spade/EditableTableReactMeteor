@@ -1,31 +1,24 @@
-import { Meteor } from 'meteor/meteor';
-import Links from '/imports/api/links';
-
-function insertLink(title, url) {
-  Links.insert({ title, url, createdAt: new Date() });
-}
+import {Meteor} from 'meteor/meteor';
+import Document from '/imports/api/Document.js'
 
 Meteor.startup(() => {
-  // If the Links collection is empty, add some data.
-  if (Links.find().count() === 0) {
-    insertLink(
-      'Do the Tutorial',
-      'https://www.meteor.com/tutorials/react/creating-an-app'
-    );
+    if (Document.find().count() === 0) {
+        Document.insert({transactions: [{date: "2018-01-01", debit: "", credit: "100", balance: "1000"}]});
+    }
+});
 
-    insertLink(
-      'Follow the Guide',
-      'http://guide.meteor.com'
-    );
-
-    insertLink(
-      'Read the Docs',
-      'https://docs.meteor.com'
-    );
-
-    insertLink(
-      'Discussions',
-      'https://forums.meteor.com'
-    );
-  }
+Meteor.methods({
+    sendVerifyAndSaveRequest(document_obj_id, transactions) {
+        console.log("Call Meteor sendVerifyAndSaveRequest: " + document_obj_id)
+        console.log(transactions)
+        try {
+            // TODO Call remote update document via External API
+            Document.update(document_obj_id, {$set: {transactions: transactions}})
+            return true
+        }
+        catch (e) {
+            console.error(e)
+            throw new Meteor.Error('Error on perform sendVerifyAndSaveRequest', e);
+        }
+    }
 });
