@@ -281,6 +281,7 @@ class EditableTable extends React.Component {
                 </Button>
                 {this.props.docsReadyYet ?
                     <Table
+                        size={"small"}
                         components={components}
                         rowClassName={() => 'editable-row'}
                         bordered
