@@ -201,8 +201,10 @@ class EditableTable extends React.Component {
         console.log("[EditableTable] Click Verify And Save ");
         event.preventDefault();
         let haveFailValidated = false;
-        for (let i = 0; i < this.state.cellListenerList.length; i++) {
-            let cell = this.state.cellListenerList[i]
+        let cellListenList = this.state.cellListenerList
+        cellListenList.sort((a, b) => (a.props.record.no - b.props.record.no))
+        for (let i = 0; i < cellListenList.length; i++) {
+            let cell = cellListenList[i]
             if (!cell.validateCell() && !haveFailValidated) {
                 cell.input.input.focus();
                 haveFailValidated = true
