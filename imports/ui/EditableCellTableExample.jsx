@@ -1,8 +1,8 @@
 import { Table, Input, Button, Popconfirm, Form } from 'antd';
 
 const FormItem = Form.Item;
-const EditableContext = React.createContext();
 
+export const EditableContext = React.createContext();
 const EditableRow = ({ form, index, ...props }) => (
     <EditableContext.Provider value={form}>
         <tr {...props} />
