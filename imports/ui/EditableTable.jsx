@@ -176,7 +176,7 @@ class EditableTable extends React.Component {
         const dataSource = [...this.state.dataSource];
         let dataSourceNew = dataSource.filter(item => item.key !== key)
         this.resetDataRowNo(dataSourceNew)
-        this.setState({dataSource: dataSourceNew, nextFocus: null});
+        this.setState({dataSource: dataSourceNew, nextFocus: null, count: this.state.count - 1});
     }
 
     handleAdd = () => {
@@ -187,7 +187,7 @@ class EditableTable extends React.Component {
         this.setState({
             dataSource: dataSourceNew,
             count: count + 1,
-            nextFocus: count
+            nextFocus: count + 1
         });
     }
 
@@ -289,12 +289,7 @@ class EditableTable extends React.Component {
                         bordered
                         dataSource={this.state.dataSource}
                         columns={columns}
-                        pagination={{
-                            showSizeChanger: true,
-                            pageSizeOptions: ['10', '15', '20', '40', '100'],
-                            showTotal: total => <span><Tag color="blue">Total {total}</Tag><Divider
-                                type="vertical"/></span>
-                        }}
+                        pagination={false}
                     /> : <div>Loading...</div>}
                 <div style={{textAlign: "center"}}>
                     <Button type="primary" onClick={this.onClickVerifyAndSave}>
