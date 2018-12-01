@@ -16,16 +16,16 @@ export default class EditableCell extends React.Component {
         cleanNextFocus: PropTypes.func,
         addCellListener: PropTypes.func,
         removeCellListener: PropTypes.func
-    }
+    };
 
     state = {
         validateStatus: "success",
         helpText: null
-    }
+    };
 
     constructor(props) {
-        super(props)
-        this.onPressEnter = this.onPressEnter.bind(this)
+        super(props);
+        this.onPressEnter = this.onPressEnter.bind(this);
         this.validateCell = this.validateCell.bind(this)
     }
 
@@ -37,88 +37,88 @@ export default class EditableCell extends React.Component {
     }
 
     componentDidMount() {
-        this.checkNextFocus()
+        this.checkNextFocus();
         if (this.props.addCellListener !== undefined) {
             this.props.addCellListener(this)
         }
     }
 
     componentWillUnmount() {
-        console.log("[EditableCell] will unmount")
+        console.log("[EditableCell] will unmount");
         if (this.props.removeCellListener !== undefined) {
             this.props.removeCellListener(this.props.record.key)
         }
     }
 
     componentDidUpdate() {
-        console.log("[EditableCell] call componentDidUpdate")
+        console.log("[EditableCell] call componentDidUpdate");
         this.checkNextFocus()
     }
 
     onPressEnter(event) {
-        console.log("[EditableCell] On Press Enter")
+        console.log("[EditableCell] On Press Enter");
         this.props.handleInsertBelow(this.props.record.key)
     }
 
     validateCell() {
-        this.setState({validateStatus: "validating"})
-        let value = this.input.props.value
+        this.setState({validateStatus: "validating"});
+        let value = this.input.props.value;
         const {record, handleSaveCell, dataIndex} = this.props;
         if (dataIndex === "date") {
-            let date_match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+            let date_match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
             if (value === "") {
-                console.log("Date Validate: Require date field.")
+                console.log("Date Validate: Require date field.");
                 let helpText = "Require date field.";
                 this.setState({validateStatus: "error", helpText: helpText});
                 return [false, helpText]
             }
             else if (!date_match) {
-                console.log("Date Validate: Require format yyyy-mm-dd\"")
+                console.log("Date Validate: Require format yyyy-mm-dd\"");
                 let helpText = "Require format yyyy-mm-dd";
                 this.setState({validateStatus: "error", helpText: helpText});
                 return [false, helpText]
             }
             else if (date_match && parseInt(date_match[1]) > 2400) {
-                console.log("Date Validate: Require (A.D) Year")
+                console.log("Date Validate: Require (A.D) Year");
                 let helpText = "Require (A.D) Year";
                 this.setState({validateStatus: "error", helpText: helpText});
                 return [false, helpText]
             }
             else if (date_match && parseInt(date_match[2]) > 12) {
-                console.log("Date Validate: Month must be {1,12}")
+                console.log("Date Validate: Month must be {1,12}");
                 let helpText = "Month must be {1,12}";
                 this.setState({validateStatus: "error", helpText: helpText});
                 return [false, helpText]
             }
             else if (date_match && parseInt(date_match[3]) > 31) {
-                console.log("Date Validate: Date must be {1,31}")
+                console.log("Date Validate: Date must be {1,31}");
                 let helpText = "Date must be {1,31}";
                 this.setState({validateStatus: "error", helpText: helpText});
                 return [false, helpText]
             }
             else {
-                this.setState({validateStatus: "success", helpText: null})
+                this.setState({validateStatus: "success", helpText: null});
                 console.log("Date Validate: Success")
             }
         }
         else {
-            let money_match = value.match(/^(\d*\.?\d+)$/)
+            let money_match = value.match(/^(\d*\.?\d+)$/);
             if (value !== "" && money_match) {
-                console.log("Money Validate: Success")
+                console.log("Money Validate: Success");
                 this.setState({validateStatus: "success", helpText: null})
             }
             else if (value === "") {
-                console.log("Money Validate: Success")
+                console.log("Money Validate: Success");
                 this.setState({validateStatus: "success", helpText: null})
             }
             else {
-                console.log("Money Validate: Require digit xxxx.xx")
+                console.log("Money Validate: Require digit xxxx.xx");
                 let helpText = "Require digit xxxx.xx";
                 this.setState({validateStatus: "error", helpText: helpText});
                 return [false, helpText]
             }
         }
-        handleSaveCell(record.key, dataIndex, value)
+        handleSaveCell(record.key, dataIndex, value);
         return [true, ""]
     }
 

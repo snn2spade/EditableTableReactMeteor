@@ -21,7 +21,7 @@ const EditableFormRow = Form.create()(EditableRow);
 
 class EditableTable extends React.Component {
     constructor(props) {
-        console.log("[EditableTable] Call constructor")
+        console.log("[EditableTable] Call constructor");
         super(props);
         this.columns = [
             {
@@ -58,15 +58,15 @@ class EditableTable extends React.Component {
                     return (
                         this.state.dataSource.length >= 1
                             ? (<span>
-                        <span className={"link"} onClick={() => this.handleInsertAbove(record.key)} href="javascript:;">
+                        <span className={"link"} onClick={() => this.handleInsertAbove(record.key)}>
                             <Icon type="up"/>
                             </span>
                         <Divider type="vertical"/>
-                        <span className={"link"} onClick={() => this.handleInsertBelow(record.key)} href="javascript:;">  <Icon
+                        <span className={"link"} onClick={() => this.handleInsertBelow(record.key)}>  <Icon
                             type="down"/></span>
                         <Divider type="vertical"/>
                         <span className={"link"} style={{color: 'red'}} onClick={() => this.handleDelete(record.key)}
-                              href="javascript:;">  <Icon type="delete"/></span>
+                        >  <Icon type="delete"/></span>
                             </span>) : null
                     );
                 },
@@ -78,39 +78,39 @@ class EditableTable extends React.Component {
             nextFocus: null,
             cellListenerList: []
         };
-        this.resetDataRowNo = this.resetDataRowNo.bind(this)
-        this.onClickVerifyAndSave = this.onClickVerifyAndSave.bind(this)
-        this.cleanNextFocus = this.cleanNextFocus.bind(this)
-        this.addCellListener = this.addCellListener.bind(this)
+        EditableTable.resetDataRowNo = EditableTable.resetDataRowNo.bind(this);
+        this.onClickVerifyAndSave = this.onClickVerifyAndSave.bind(this);
+        this.cleanNextFocus = this.cleanNextFocus.bind(this);
+        this.addCellListener = this.addCellListener.bind(this);
         this.removeCellListener = this.removeCellListener.bind(this)
     }
 
     componentDidUpdate() {
-        console.log("Call [EditableTable] componentDidUpdate")
-        console.log(this.state)
+        console.log("Call [EditableTable] componentDidUpdate");
+        console.log(this.state);
         if (this.props.docsReadyYet && !this.state.isInitialDataLoaded) {
-            console.log("Doc Ready!")
-            let transactions = this.props.document["transactions"]
+            console.log("Doc Ready!");
+            let transactions = this.props.document["transactions"];
             // set up transactions no. and key
             for (let i = 0; i < transactions.length; i++) {
-                transactions[i]["key"] = i
+                transactions[i]["key"] = i;
                 transactions[i]["no"] = i + 1
             }
-            this.setState({dataSource: transactions, count: transactions.length})
+            this.setState({dataSource: transactions, count: transactions.length});
             this.state.isInitialDataLoaded = true
         }
     }
 
     addCellListener(cell) {
-        console.log("Add listener: " + cell.props.record.key)
-        let cellListenerList = this.state.cellListenerList
-        cellListenerList.push(cell)
+        console.log("Add listener: " + cell.props.record.key);
+        let cellListenerList = this.state.cellListenerList;
+        cellListenerList.push(cell);
         this.setState({cellListenerList: cellListenerList})
     }
 
     removeCellListener(key) {
-        console.log("Remove listener: " + key)
-        let cellListenerList = this.state.cellListenerList
+        console.log("Remove listener: " + key);
+        let cellListenerList = this.state.cellListenerList;
         cellListenerList = cellListenerList.filter(c => (c.props.record.key !== key));
         this.setState({cellListenerList: cellListenerList})
     }
@@ -123,7 +123,7 @@ class EditableTable extends React.Component {
         this.setState({nextFocus: null})
     }
 
-    createNewData(key) {
+    static createNewData(key) {
         let newData = {
             key: key,
             no: '',
@@ -139,21 +139,21 @@ class EditableTable extends React.Component {
         let {count, dataSource} = this.state;
         let index = dataSource.findIndex(item => key === item.key);
         let no = dataSource[index].no;
-        dataSource.splice(index, 0, this.createNewData(count))
-        this.resetDataRowNo(dataSource)
+        dataSource.splice(index, 0, EditableTable.createNewData(count));
+        EditableTable.resetDataRowNo(dataSource);
         this.setState({
             dataSource: dataSource,
             count: count + 1,
             nextFocus: no
         });
 
-    }
+    };
 
     /**
      * Reset transaction no.
      * @param dataSource
      */
-    resetDataRowNo(dataSource) {
+    static resetDataRowNo(dataSource) {
         for (let i = 0; i < dataSource.length; i++) {
             dataSource[i]["no"] = i + 1
         }
@@ -163,61 +163,61 @@ class EditableTable extends React.Component {
         let {count, dataSource} = this.state;
         let index = dataSource.findIndex(item => key === item.key);
         let no = dataSource[index].no;
-        dataSource.splice(index + 1, 0, this.createNewData(count))
-        this.resetDataRowNo(dataSource)
+        dataSource.splice(index + 1, 0, EditableTable.createNewData(count));
+        EditableTable.resetDataRowNo(dataSource);
         this.setState({
             dataSource: dataSource,
             count: count + 1,
             nextFocus: no + 1
         });
-    }
+    };
 
     handleDelete = (key) => {
         const dataSource = [...this.state.dataSource];
-        let dataSourceNew = dataSource.filter(item => item.key !== key)
-        this.resetDataRowNo(dataSourceNew)
+        let dataSourceNew = dataSource.filter(item => item.key !== key);
+        EditableTable.resetDataRowNo(dataSourceNew);
         this.setState({dataSource: dataSourceNew, nextFocus: null, count: this.state.count - 1});
-    }
+    };
 
     handleAdd = () => {
         const {count, dataSource} = this.state;
-        const newData = this.createNewData(count)
-        let dataSourceNew = [...dataSource, newData]
-        this.resetDataRowNo(dataSourceNew)
+        const newData = EditableTable.createNewData(count);
+        let dataSourceNew = [...dataSource, newData];
+        EditableTable.resetDataRowNo(dataSourceNew);
         this.setState({
             dataSource: dataSourceNew,
             count: count + 1,
             nextFocus: count + 1
         });
-    }
+    };
 
     handleSaveCell = (key, dataIndex, value) => {
-        console.log("[EditableTable] Handle save cell")
+        console.log("[EditableTable] Handle save cell");
         const newData = [...this.state.dataSource];
         const index = newData.findIndex(item => key === item.key);
-        newData[index][dataIndex] = value
+        newData[index][dataIndex] = value;
         this.setState({dataSource: newData});
-    }
+    };
 
     onClickVerifyAndSave(event) {
         console.log("[EditableTable] Click Verify And Save ");
         event.preventDefault();
         let haveFailValidated = false;
-        let cellListenList = this.state.cellListenerList
-        let firstHelpText = ""
-        cellListenList.sort((a, b) => (a.props.record.no - b.props.record.no))
+        let cellListenList = this.state.cellListenerList;
+        let firstHelpText = "";
+        cellListenList.sort((a, b) => (a.props.record.no - b.props.record.no));
         for (let i = 0; i < cellListenList.length; i++) {
-            let cell = cellListenList[i]
-            let validateCellResult = cell.validateCell()
+            let cell = cellListenList[i];
+            let validateCellResult = cell.validateCell();
             if (!validateCellResult[0] && !haveFailValidated) {
                 cell.input.input.focus();
-                firstHelpText = validateCellResult[1]
+                firstHelpText = validateCellResult[1];
                 haveFailValidated = true
             }
         }
         if (!haveFailValidated) {
             Meteor.call('sendVerifyAndSaveRequest', this.props.document._id, this.state.dataSource, (err, result) => {
-                console.log("Callback from Meteor method 'sendVerifyAndSaveRequest'")
+                console.log("Callback from Meteor method 'sendVerifyAndSaveRequest'");
                 if (err) {
                     iziToast.error({
                         title: 'Error',
@@ -232,7 +232,7 @@ class EditableTable extends React.Component {
                         position: 'topRight'
                     });
                 }
-            })
+            });
             return true
         }
         else {
@@ -308,7 +308,7 @@ export default EditableTableContainer = withTracker(() => {
         console.log("Call back after subscribe")
     });
     const docsReadyYet = document_handle.ready();
-    const document = Document.findOne()
+    const document = Document.findOne();
     return {
         docsReadyYet,
         document
