@@ -239,6 +239,7 @@ class EditableTable extends React.Component {
                         message: 'Verify Passed, Saved',
                         position: 'topRight'
                     });
+                    this.setState({isEditing: false})
                 }
             });
             return true
