@@ -12,6 +12,11 @@ Meteor.methods({
         console.log("Call Meteor sendVerifyAndSaveRequest: " + document_obj_id)
         console.log(transactions)
         try {
+            for (let i =0;i<transactions.length;i++)
+            {
+                delete transactions[i]["no"]
+                delete transactions[i]["key"]
+            }
             // TODO Call remote update document via External API
             Document.update(document_obj_id, {$set: {transactions: transactions}})
             return true
