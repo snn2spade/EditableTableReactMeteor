@@ -1,6 +1,11 @@
 .link {
     color: #1890ff
 }
-.link:hover{
+
+.link:hover {
     cursor: pointer
+}
+
+thead[class*="ant-table-thead"] th {
+    background-color: #ececec !important;
 }

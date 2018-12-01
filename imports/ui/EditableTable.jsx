@@ -277,7 +277,7 @@ class EditableTable extends React.Component {
         });
         return (
             <Form>
-                <Button onClick={this.handleAdd} type="primary"
+                <Button onClick={this.handleAdd} type="default"
                         style={{marginBottom: 16}}>
                     <Icon type="plus"/> Add row
                 </Button>
@@ -290,9 +290,10 @@ class EditableTable extends React.Component {
                         dataSource={this.state.dataSource}
                         columns={columns}
                         pagination={false}
+                        scroll={{ y: 400 }}
                     /> : <div>Loading...</div>}
-                <div style={{textAlign: "center"}}>
-                    <Button type="primary" onClick={this.onClickVerifyAndSave}>
+                <div style={{textAlign: "center",marginTop:"16px"}}>
+                    <Button type="primary" onClick={this.onClickVerifyAndSave} >
                         <Icon type="check"/>Verify and Save
                     </Button>
                 </div>
