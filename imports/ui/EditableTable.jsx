@@ -1,5 +1,5 @@
 import 'antd/dist/antd.css';
-import {Table, Button, Form, Divider, Icon, Tag} from 'antd';
+import {Table, Button, Form, Divider, Icon, Tag, Col, Row} from 'antd';
 import React from 'react'
 import PropTypes from 'prop-types';
 import './EditableTable.css'
@@ -56,7 +56,7 @@ class EditableTable extends React.Component {
                 width: 200,
                 render: (text, record) => {
                     return (
-                        this.state.dataSource.length >= 1
+                        this.state.isEditing
                             ? (<span>
                         <span className={"link"} onClick={() => this.handleInsertAbove(record.key)}>
                             <Icon type="up"/>
@@ -67,7 +67,13 @@ class EditableTable extends React.Component {
                         <Divider type="vertical"/>
                         <span className={"link"} style={{color: 'red'}} onClick={() => this.handleDelete(record.key)}
                         >  <Icon type="delete"/></span>
-                            </span>) : null
+                            </span>) :
+                            (<span>
+                         <span style={{color: 'grey'}}>  <Icon type="up"/></span>
+                        <Divider type="vertical"/>
+                         <span style={{color: 'grey'}}>  <Icon type="down"/></span>
+                        <Divider type="vertical"/>
+                        <span style={{color: 'grey'}}>  <Icon type="delete"/></span></span>)
                     );
                 },
             }];
@@ -76,13 +82,15 @@ class EditableTable extends React.Component {
             count: 0,
             isInitialDataLoaded: false,
             nextFocus: null,
-            cellListenerList: []
+            cellListenerList: [],
+            isEditing: false
         };
         EditableTable.resetDataRowNo = EditableTable.resetDataRowNo.bind(this);
         this.onClickVerifyAndSave = this.onClickVerifyAndSave.bind(this);
         this.cleanNextFocus = this.cleanNextFocus.bind(this);
         this.addCellListener = this.addCellListener.bind(this);
         this.removeCellListener = this.removeCellListener.bind(this)
+        this.toggleEditingMode = this.toggleEditingMode.bind(this)
     }
 
     componentDidUpdate() {
@@ -245,6 +253,10 @@ class EditableTable extends React.Component {
         }
     }
 
+    toggleEditingMode() {
+        this.setState({isEditing: !this.state.isEditing})
+    }
+
     render() {
         const {dataSource} = this.state;
         const components = {
@@ -270,7 +282,8 @@ class EditableTable extends React.Component {
                         nextFocus: this.state.nextFocus,
                         cleanNextFocus: this.cleanNextFocus,
                         addCellListener: this.addCellListener,
-                        removeCellListener: this.removeCellListener
+                        removeCellListener: this.removeCellListener,
+                        isEditing: this.state.isEditing
                     }
                 },
             };
@@ -290,10 +303,18 @@ class EditableTable extends React.Component {
                         dataSource={this.state.dataSource}
                         columns={columns}
                         pagination={false}
-                        scroll={{ y: 400 }}
+                        scroll={{y: 400}}
                     /> : <div>Loading...</div>}
-                <div style={{textAlign: "center",marginTop:"16px"}}>
-                    <Button type="primary" onClick={this.onClickVerifyAndSave} >
+                <div style={{textAlign: "center", marginTop: "16px"}}>
+                    {this.state.isEditing ?
+                        <Button type="default" onClick={this.toggleEditingMode}>
+                            <Icon type="lock"/> Disable Editing
+                        </Button> :
+                        <Button type="default" onClick={this.toggleEditingMode}>
+                            <Icon type="unlock"/> Enable Editing
+                        </Button>}
+
+                    <Button type="primary" onClick={this.onClickVerifyAndSave} style={{marginLeft: "10px"}}>
                         <Icon type="check"/>Verify and Save
                     </Button>
                 </div>

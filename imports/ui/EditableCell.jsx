@@ -15,7 +15,8 @@ export default class EditableCell extends React.Component {
         nextFocus: PropTypes.number,
         cleanNextFocus: PropTypes.func,
         addCellListener: PropTypes.func,
-        removeCellListener: PropTypes.func
+        removeCellListener: PropTypes.func,
+        isEditing: PropTypes.bool
     };
 
     state = {
@@ -135,6 +136,7 @@ export default class EditableCell extends React.Component {
             cleanNextFocus,
             addCellListener,
             removeCellListener,
+            isEditing,
             ...restProps
         } = this.props;
         return (
@@ -154,6 +156,7 @@ export default class EditableCell extends React.Component {
                                             ref={node => (this.input = node)}
                                             onPressEnter={this.onPressEnter}
                                             onChange={this.validateCell}
+                                            disabled={!this.props.isEditing}
                                         />
                                     )}
                                 </FormItem>
