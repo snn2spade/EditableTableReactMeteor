@@ -118,8 +118,8 @@ class EditableTable extends React.Component {
 
     removeCellListener(key) {
         console.log("Remove listener: " + key);
-        this.state.cellListenerList =  this.state.cellListenerList.filter(c => (c.props.record.key !== key));
-        this.setState({cellListenerList:  this.state.cellListenerList})
+        this.state.cellListenerList = this.state.cellListenerList.filter(c => (c.props.record.key !== key));
+        this.setState({cellListenerList: this.state.cellListenerList})
     }
 
     componentDidMount() {
@@ -290,7 +290,8 @@ class EditableTable extends React.Component {
         return (
             <Form>
                 <Button onClick={this.handleAdd} type="default"
-                        style={{marginBottom: 16}}>
+                        style={{marginBottom: 16}}
+                        disabled={!this.state.isEditing}>
                     <Icon type="plus"/> Add row
                 </Button>
                 {this.props.docsReadyYet ?
