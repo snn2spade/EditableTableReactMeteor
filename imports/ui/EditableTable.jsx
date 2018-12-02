@@ -118,9 +118,8 @@ class EditableTable extends React.Component {
 
     removeCellListener(key) {
         console.log("Remove listener: " + key);
-        let cellListenerList = this.state.cellListenerList;
-        cellListenerList = cellListenerList.filter(c => (c.props.record.key !== key));
-        this.setState({cellListenerList: cellListenerList})
+        this.state.cellListenerList =  this.state.cellListenerList.filter(c => (c.props.record.key !== key));
+        this.setState({cellListenerList:  this.state.cellListenerList})
     }
 
     componentDidMount() {
