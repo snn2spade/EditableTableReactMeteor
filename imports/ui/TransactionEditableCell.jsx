@@ -12,8 +12,11 @@ export default class TransactionEditableCell extends React.Component {
         dataIndex: PropTypes.string,
         handleSaveCell: PropTypes.func,
         handleInsertBelow: PropTypes.func,
-        nextFocus: PropTypes.number,
+        handleDelete: PropTypes.func,
+        nextFocusNo: PropTypes.number,
+        nextFocusDataIndex: PropTypes.string,
         cleanNextFocus: PropTypes.func,
+        setNextFocus: PropTypes.func,
         isEditing: PropTypes.bool
     };
 
@@ -22,11 +25,12 @@ export default class TransactionEditableCell extends React.Component {
         // console.log(props);
         super(props);
         this.onPressEnter = this.onPressEnter.bind(this);
+        this.onKeyDown = this.onKeyDown.bind(this);
         this.validateCell = this.validateCell.bind(this);
     }
 
     checkNextFocus() {
-        if (this.props.record !== undefined && this.props.record.no === this.props.nextFocus && this.props.dataIndex === "date") {
+        if (this.props.record !== undefined && this.props.record.no === this.props.nextFocusNo && this.props.dataIndex === this.props.nextFocusDataIndex) {
             this.input.focus();
             this.props.cleanNextFocus();
         }
@@ -34,7 +38,7 @@ export default class TransactionEditableCell extends React.Component {
 
     componentDidMount() {
         // console.log("[TransactionEditableCell] componentDidMount");
-        // this.checkNextFocus();
+        this.checkNextFocus();
     }
 
 
@@ -44,12 +48,37 @@ export default class TransactionEditableCell extends React.Component {
 
     componentDidUpdate() {
         // console.log("[TransactionEditableCell] componentDidUpdate");
-        // this.checkNextFocus();
+        this.checkNextFocus();
     }
 
     onPressEnter(event) {
         // console.log("[TransactionEditableCell] On Press Enter");
         this.props.handleInsertBelow(this.props.record.key)
+    }
+
+    onKeyDown(event) {
+        const dataIndexList = ["date", "debit", "credit", "balance"];
+        const index = dataIndexList.findIndex(item => this.props.dataIndex === item);
+        if (event.key === "ArrowDown") {
+            event.preventDefault();
+            this.props.setNextFocus(this.props.record.no + 1, this.props.dataIndex);
+        }
+        else if (event.key === "ArrowUp") {
+            event.preventDefault();
+            this.props.setNextFocus(this.props.record.no - 1, this.props.dataIndex);
+        }
+        else if (event.key === "ArrowLeft" && event.target.selectionStart === 0 && index >= 1) {
+            event.preventDefault();
+            this.props.setNextFocus(this.props.record.no, dataIndexList[index - 1]);
+        }
+        else if (event.key === "ArrowRight" && event.target.selectionStart === event.target.value.length && index < dataIndexList.length - 1) {
+            event.preventDefault();
+            this.props.setNextFocus(this.props.record.no, dataIndexList[index + 1]);
+        }
+        else if (event.key === "Delete") {
+            event.preventDefault();
+            this.props.handleDelete(this.props.record.key);
+        }
     }
 
     validateCell = (rule, value, callback) => {
@@ -119,8 +148,11 @@ export default class TransactionEditableCell extends React.Component {
             title,
             handleSaveCell,
             handleInsertBelow,
-            nextFocus,
+            handleDelete,
+            nextFocusNo,
+            nextFocusDataIndex,
             cleanNextFocus,
+            setNextFocus,
             isEditing,
             form,
             ...restProps
@@ -142,6 +174,8 @@ export default class TransactionEditableCell extends React.Component {
                                 ref={node => (this.input = node)}
                                 onPressEnter={this.onPressEnter}
                                 disabled={!this.props.isEditing}
+                                onKeyDown={this.onKeyDown}
+                                autoComplete={"off"}
                             />)}
                     </FormItem>
                     : restProps.children}

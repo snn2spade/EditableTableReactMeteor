@@ -29,7 +29,7 @@ class TransactionEditableTable extends React.Component {
                 title: '',
                 key: 'key',
                 dataIndex: 'key',
-                render: (text, record) => <span>{record.no}</span>,
+                render: (text, record) => <span>{record.no + 1}</span>,
                 width: 50
             }, {
                 title: 'date',
@@ -83,12 +83,14 @@ class TransactionEditableTable extends React.Component {
         this.state = {
             transactions: initial_transactions,
             count: initial_transactions.length,
-            nextFocus: null,
+            nextFocusNo: null,
+            nextFocusDataIndex: "date",
             isEditing: false,
             tranTableHeight: 400
         };
         this.onClickVerifyAndSave = this.onClickVerifyAndSave.bind(this);
         this.cleanNextFocus = this.cleanNextFocus.bind(this);
+        this.setNextFocus = this.setNextFocus.bind(this);
         this.toggleEditingMode = this.toggleEditingMode.bind(this);
         this.updateTranTableHeight = this.updateTranTableHeight.bind(this);
     }
@@ -123,7 +125,11 @@ class TransactionEditableTable extends React.Component {
     }
 
     cleanNextFocus() {
-        this.setState({nextFocus: null})
+        this.setState({nextFocusNo: null, nextFocusDataIndex: "date"})
+    }
+
+    setNextFocus(nextFocusNo, nextFocusDataIndex) {
+        this.setState({nextFocusNo, nextFocusDataIndex})
     }
 
     static createNewData(key) {
@@ -138,13 +144,13 @@ class TransactionEditableTable extends React.Component {
 
     static initialDataKey(transactions) {
         for (let i = 0; i < transactions.length; i++) {
-            transactions[i]["key"] = i
+            transactions[i]["key"] = i;
         }
     }
 
     static resetDataNo(transactions) {
         for (let i = 0; i < transactions.length; i++) {
-            transactions[i]["no"] = i + 1
+            transactions[i]["no"] = i;
         }
     }
 
@@ -156,7 +162,7 @@ class TransactionEditableTable extends React.Component {
         TransactionEditableTable.resetDataNo(transactions);
         this.setState({
             transactions: transactions,
-            nextFocus: key,
+            nextFocusNo: index,
             count: count + 1
         });
 
@@ -170,16 +176,20 @@ class TransactionEditableTable extends React.Component {
         TransactionEditableTable.resetDataNo(transactions);
         this.setState({
             transactions: transactions,
-            nextFocus: key + 1,
+            nextFocusNo: index + 1,
             count: count + 1
         });
     };
 
     handleDelete = (key) => {
         // console.log("handle delete key: ", key);
+        let index = this.state.transactions.findIndex(item => key === item.key);
+        if (index === this.state.transactions.length - 1) {
+            index = index - 1
+        }
         const transactions = this.state.transactions.filter(item => item.key !== key);
         TransactionEditableTable.resetDataNo(transactions);
-        this.setState({transactions: transactions, nextFocus: null});
+        this.setState({transactions: transactions, nextFocusNo: index});
     };
 
     handleAdd = () => {
@@ -189,7 +199,7 @@ class TransactionEditableTable extends React.Component {
         TransactionEditableTable.resetDataNo(transactions);
         this.setState({
             transactions: transactions,
-            nextFocus: this.state.transactions.length - 1,
+            nextFocusNo: this.state.transactions.length - 1,
             count: count + 1
         });
     };
@@ -290,10 +300,13 @@ class TransactionEditableTable extends React.Component {
                         title: col.title,
                         handleSaveCell: this.handleSaveCell,
                         handleInsertBelow: this.handleInsertBelow,
-                        nextFocus: this.state.nextFocus,
+                        handleDelete: this.handleDelete,
+                        nextFocusNo: this.state.nextFocusNo,
+                        nextFocusDataIndex: this.state.nextFocusDataIndex,
+                        setNextFocus: this.setNextFocus,
                         cleanNextFocus: this.cleanNextFocus,
                         isEditing: this.state.isEditing,
-                        form: this.props.form
+                        form: this.props.form,
                     }
                 },
             };
