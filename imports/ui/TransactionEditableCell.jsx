@@ -27,6 +27,9 @@ export default class TransactionEditableCell extends React.Component {
         this.onPressEnter = this.onPressEnter.bind(this);
         this.onKeyDown = this.onKeyDown.bind(this);
         this.validateCell = this.validateCell.bind(this);
+        this.state = {
+            lastKeyDown: null
+        }
     }
 
     checkNextFocus() {
@@ -75,10 +78,11 @@ export default class TransactionEditableCell extends React.Component {
             event.preventDefault();
             this.props.setNextFocus(this.props.record.no, dataIndexList[index + 1]);
         }
-        else if (event.key === "Delete") {
+        else if (this.state.lastKeyDown === "Control" && event.key === "Delete") {
             event.preventDefault();
             this.props.handleDelete(this.props.record.key);
         }
+        this.setState({lastKeyDown: event.key})
     }
 
     validateCell = (rule, value, callback) => {
