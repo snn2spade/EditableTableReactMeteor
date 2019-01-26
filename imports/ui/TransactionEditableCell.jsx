@@ -2,11 +2,11 @@ import 'antd/dist/antd.css';
 import {Input, Form} from 'antd';
 import React from 'react'
 import PropTypes from 'prop-types';
-import {EditableContext} from './EditableTable.jsx'
+import {EditableContext} from './TransactionEditableTable.jsx'
 
 const FormItem = Form.Item;
 
-export default class EditableCell extends React.Component {
+export default class TransactionEditableCell extends React.Component {
     static propTypes = {
         record: PropTypes.object,
         editable: PropTypes.bool,
@@ -14,20 +14,25 @@ export default class EditableCell extends React.Component {
         handleInsertBelow: PropTypes.func,
         nextFocus: PropTypes.number,
         cleanNextFocus: PropTypes.func,
-        addCellListener: PropTypes.func,
-        removeCellListener: PropTypes.func,
+        // addCellListener: PropTypes.func,
+        // removeCellListener: PropTypes.func,
         isEditing: PropTypes.bool
     };
 
-    state = {
-        validateStatus: "success",
-        helpText: null
-    };
 
     constructor(props) {
         super(props);
         this.onPressEnter = this.onPressEnter.bind(this);
-        this.validateCell = this.validateCell.bind(this)
+        this.validateCell = this.validateCell.bind(this);
+        this.onChange = this.onChange.bind(this);
+        this.state = {
+            validateStatus: "success",
+            helpText: null,
+            inputValue: null
+        };
+        if (this.props.editable) {
+            this.state.inputValue = this.props.record[this.props.dataIndex]
+        }
     }
 
     checkNextFocus() {
@@ -37,22 +42,29 @@ export default class EditableCell extends React.Component {
         }
     }
 
-    componentDidMount() {
-        this.checkNextFocus();
-        if (this.props.addCellListener !== undefined) {
-            this.props.addCellListener(this)
+    componentWillReceiveProps() {
+        if (this.props.editable) {
+            this.setState({inputValue: this.props.record[this.props.dataIndex]})
         }
+    }
+
+    componentDidMount() {
+        // console.log("[TransactionEditableCell] componentDidMount");
+        this.checkNextFocus();
+        // if (this.props.addCellListener !== undefined) {
+        //     this.props.addCellListener(this)
+        // }
     }
 
     componentWillUnmount() {
-        console.log("[EditableCell] will unmount");
-        if (this.props.removeCellListener !== undefined) {
-            this.props.removeCellListener(this.props.record.key)
-        }
+        // console.log("[TransactionEditableCell] componentWillUnMount");
+        // if (this.props.removeCellListener !== undefined) {
+        //     this.props.removeCellListener(this.props.record.key)
+        // }
     }
 
     componentDidUpdate() {
-        console.log("[EditableCell] call componentDidUpdate");
+        // console.log("[EditableCell] call componentDidUpdate");
         this.checkNextFocus()
     }
 
@@ -61,11 +73,22 @@ export default class EditableCell extends React.Component {
         this.props.handleInsertBelow(this.props.record.key)
     }
 
+    onChange(e) {
+        this.state.inputValue = e.target.value;
+        let validated_result = this.validateCell();
+        if (validated_result[0]) {
+            this.setState({inputValue: this.state.inputValue})
+        }
+    }
+
     validateCell() {
-        this.setState({validateStatus: "validating"});
-        let value = this.input.props.value;
+        console.log("[EditableCell] call validate cell");
         const {record, handleSaveCell, dataIndex} = this.props;
-        if (dataIndex === "date") {
+        this.setState({validateStatus: "validating"});
+        // let value = this.input.props.value;
+        let value = this.state.inputValue;
+
+        if (dataIndex === "validated_date") {
             let date_match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
             if (value === "") {
                 console.log("Date Validate: Require date field.");
@@ -99,17 +122,20 @@ export default class EditableCell extends React.Component {
             }
             else {
                 this.setState({validateStatus: "success", helpText: null});
-                console.log("Date Validate: Success")
+                // console.log("Date Validate: Success")
             }
         }
         else {
             let money_match = value.match(/^(\d*\.?\d+)$/);
+            if (dataIndex === "validated_balance") {
+                money_match = value.match(/^(\-?\d*\.?\d+)$/);
+            }
             if (value !== "" && money_match) {
-                console.log("Money Validate: Success");
+                // console.log("Money Validate: Success");
                 this.setState({validateStatus: "success", helpText: null})
             }
             else if (value === "") {
-                console.log("Money Validate: Success");
+                // console.log("Money Validate: Success");
                 this.setState({validateStatus: "success", helpText: null})
             }
             else {
@@ -149,16 +175,13 @@ export default class EditableCell extends React.Component {
                                 <FormItem style={{margin: 0}} hasFeedback={this.state.validateStatus === "error"}
                                           validateStatus={this.state.validateStatus}
                                           help={null}>
-                                    {form.getFieldDecorator(dataIndex, {
-                                        initialValue: record[dataIndex]
-                                    })(
-                                        <Input
-                                            ref={node => (this.input = node)}
-                                            onPressEnter={this.onPressEnter}
-                                            onChange={this.validateCell}
-                                            disabled={!this.props.isEditing}
-                                        />
-                                    )}
+                                    <Input
+                                        ref={node => (this.input = node)}
+                                        onPressEnter={this.onPressEnter}
+                                        onChange={this.onChange}
+                                        disabled={!this.props.isEditing}
+                                        value={this.state.inputValue}
+                                    />
                                 </FormItem>
                             </div>
                         }}

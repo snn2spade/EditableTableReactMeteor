@@ -1,9 +1,9 @@
 import React from 'react';
-import EditableTableContainer from "./EditableTable.jsx";
+import TransactionEditableTable from "./TransactionEditableTable.jsx";
 
 const App = () => (
     <div>
-        <EditableTableContainer/>
+        <TransactionEditableTable/>
     </div>
 );
 
