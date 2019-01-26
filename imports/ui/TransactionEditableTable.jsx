@@ -12,15 +12,11 @@ import _ from "lodash";
 
 const initial_transactions = [{date: "2018-01-01", debit: "", credit: "100", balance: "1000"}];
 
-export const EditableContext = React.createContext();
 const EditableRow = ({form, index, ...props}) => (
-    <EditableContext.Provider value={form}>
-        <tr {...props} />
-    </EditableContext.Provider>
+    <tr {...props} />
 );
-const EditableFormRow = Form.create()(EditableRow);
 
-export default class TransactionEditableTable extends React.Component {
+class TransactionEditableTable extends React.Component {
     static propTypes = {
         transactions: PropTypes.array,
     };
@@ -86,15 +82,12 @@ export default class TransactionEditableTable extends React.Component {
         this.state = {
             transactions: initial_transactions,
             nextFocus: null,
-            // cellListenerList: [],
             isEditing: false,
             tranTableHeight: 400
         };
         TransactionEditableTable.resetDataKeyNo = TransactionEditableTable.resetDataKeyNo.bind(this);
         this.onClickVerifyAndSave = this.onClickVerifyAndSave.bind(this);
         this.cleanNextFocus = this.cleanNextFocus.bind(this);
-        // this.addCellListener = this.addCellListener.bind(this);
-        // this.removeCellListener = this.removeCellListener.bind(this);
         this.toggleEditingMode = this.toggleEditingMode.bind(this);
         this.updateTranTableHeight = this.updateTranTableHeight.bind(this);
     }
@@ -126,20 +119,6 @@ export default class TransactionEditableTable extends React.Component {
             this.setState({transactions: this.props.transactions})
         }
     }
-
-    // addCellListener(cell) {
-    //     // console.log("Add listener: " + cell.props.record.key);
-    //     let cellListenerList = this.state.cellListenerList;
-    //     cellListenerList.push(cell);
-    //     this.setState({cellListenerList: cellListenerList})
-    // }
-    //
-    // removeCellListener(key) {
-    //     // console.log("Remove listener: " + key);
-    //     this.state.cellListenerList = this.state.cellListenerList.filter(c => (c.props.record.key !== key));
-    //     this.setState({cellListenerList: this.state.cellListenerList})
-    // }
-
 
     cleanNextFocus() {
         this.setState({nextFocus: null})
@@ -218,61 +197,58 @@ export default class TransactionEditableTable extends React.Component {
     };
 
     onClickVerifyAndSave(event) {
-        console.log("[EditableTable] Click Verify And Save ");
+        console.log("[EditableTable] onClickVerifyAndSave");
+        console.log(this.state.transactions);
         event.preventDefault();
-        let hasValidationError = false;
+        let hasValidationError = true;
         let firstHelpText = "";
+        this.props.form.validateFieldsAndScroll((err, values) => {
+            if (!err) {
+                console.log('validate form success', values);
+            }
+            else {
+                console.log("validate form error:", err)
+            }
+        });
 
-        // let cellListenList = this.state.cellListenerList;
-        // cellListenList.sort((a, b) => (a.props.record.no - b.props.record.no));
-        // for (let i = 0; i < cellListenList.length; i++) {
-        //     let cell = cellListenList[i];
-        //     let validateCellResult = cell.validateCell();
-        //     if (!validateCellResult[0] && !hasValidationError) {
-        //         cell.input.input.focus();
-        //         firstHelpText = validateCellResult[1];
-        //         hasValidationError = true
-        //     }
+        // if (!hasValidationError) {
+        //     Meteor.call('sendVerifyAndSaveRequest', this.state.transactions, (err, result) => {
+        //         console.log("Callback from Meteor method 'sendVerifyAndSaveRequest'");
+        //         if (err) {
+        //             console.error(err);
+        //             let err_msg;
+        //             try {
+        //                 err_msg = 'Verify failed, ' + err.error.response.data.msg;
+        //             }
+        //             catch (e) {
+        //                 err_msg = JSON.stringify(err);
+        //             }
+        //             iziToast.error({
+        //                 title: 'Error',
+        //                 message: err_msg,
+        //                 position: 'topRight',
+        //                 timeout: 5000
+        //             });
+        //         }
+        //         else {
+        //             iziToast.success({
+        //                 title: 'Success',
+        //                 message: 'Verify Passed, Saved',
+        //                 position: 'topRight'
+        //             });
+        //             this.setState({isEditing: false})
+        //         }
+        //     });
+        //     return true
         // }
-
-        if (!hasValidationError) {
-            Meteor.call('sendVerifyAndSaveRequest', this.state.transactions, (err, result) => {
-                console.log("Callback from Meteor method 'sendVerifyAndSaveRequest'");
-                if (err) {
-                    console.error(err);
-                    let err_msg;
-                    try {
-                        err_msg = 'Verify failed, ' + err.error.response.data.msg;
-                    }
-                    catch (e) {
-                        err_msg = JSON.stringify(err);
-                    }
-                    iziToast.error({
-                        title: 'Error',
-                        message: err_msg,
-                        position: 'topRight',
-                        timeout: 5000
-                    });
-                }
-                else {
-                    iziToast.success({
-                        title: 'Success',
-                        message: 'Verify Passed, Saved',
-                        position: 'topRight'
-                    });
-                    this.setState({isEditing: false})
-                }
-            });
-            return true
-        }
-        else {
-            iziToast.error({
-                title: 'Error',
-                message: firstHelpText,
-                position: 'topRight'
-            });
-            return false
-        }
+        // else {
+        //     iziToast.error({
+        //         title: 'Error',
+        //         message: firstHelpText,
+        //         position: 'topRight'
+        //     });
+        //     return false
+        // }
     }
 
     toggleEditingMode() {
@@ -300,7 +276,7 @@ export default class TransactionEditableTable extends React.Component {
     render() {
         const components = {
             body: {
-                row: EditableFormRow,
+                row: EditableRow,
                 cell: TransactionEditableCell,
             },
         };
@@ -310,7 +286,7 @@ export default class TransactionEditableTable extends React.Component {
             }
             return {
                 ...col,
-                onCell: record => {
+                onCell: (record, rowIndex) => {
                     return {
                         record,
                         editable: col.editable,
@@ -320,9 +296,8 @@ export default class TransactionEditableTable extends React.Component {
                         handleInsertBelow: this.handleInsertBelow,
                         nextFocus: this.state.nextFocus,
                         cleanNextFocus: this.cleanNextFocus,
-                        addCellListener: this.addCellListener,
-                        removeCellListener: this.removeCellListener,
-                        isEditing: this.state.isEditing
+                        isEditing: this.state.isEditing,
+                        form: this.props.form
                     }
                 },
             };
@@ -352,3 +327,5 @@ export default class TransactionEditableTable extends React.Component {
         </Form>
     }
 }
+
+export default Form.create()(TransactionEditableTable);
