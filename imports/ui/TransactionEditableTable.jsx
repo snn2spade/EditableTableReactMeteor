@@ -199,7 +199,7 @@ class TransactionEditableTable extends React.Component {
         TransactionEditableTable.resetDataNo(transactions);
         this.setState({
             transactions: transactions,
-            nextFocusNo: this.state.transactions.length - 1,
+            nextFocusNo: this.state.transactions.length,
             count: count + 1
         });
     };
