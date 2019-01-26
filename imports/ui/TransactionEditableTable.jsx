@@ -29,7 +29,7 @@ class TransactionEditableTable extends React.Component {
                 title: '',
                 key: 'key',
                 dataIndex: 'key',
-                render: (text, record) => <span>{record.key + 1}</span>,
+                render: (text, record) => <span>{record.no}</span>,
                 width: 50
             }, {
                 title: 'date',
@@ -78,14 +78,15 @@ class TransactionEditableTable extends React.Component {
                     );
                 },
             }];
-        TransactionEditableTable.resetDataKeyNo(initial_transactions);
+        TransactionEditableTable.initialDataKey(initial_transactions);
+        TransactionEditableTable.resetDataNo(initial_transactions);
         this.state = {
             transactions: initial_transactions,
+            count: initial_transactions.length,
             nextFocus: null,
             isEditing: false,
             tranTableHeight: 400
         };
-        TransactionEditableTable.resetDataKeyNo = TransactionEditableTable.resetDataKeyNo.bind(this);
         this.onClickVerifyAndSave = this.onClickVerifyAndSave.bind(this);
         this.cleanNextFocus = this.cleanNextFocus.bind(this);
         this.toggleEditingMode = this.toggleEditingMode.bind(this);
@@ -115,18 +116,19 @@ class TransactionEditableTable extends React.Component {
 
     componentDidUpdate(previousProps, previousState) {
         console.log("[TransactionEditableTable] componentDidUpdate");
-        if (previousProps.transactions !== this.props.transactions) {
-            this.setState({transactions: this.props.transactions})
-        }
+        console.log(this.state.transactions)
+        // if (previousProps.transactions !== this.props.transactions) {
+        //     this.setState({transactions: this.props.transactions})
+        // }
     }
 
     cleanNextFocus() {
         this.setState({nextFocus: null})
     }
 
-    static createNewData() {
+    static createNewData(key) {
         return {
-            key: null,
+            key: key,
             date: '',
             debit: '',
             credit: '',
@@ -134,121 +136,115 @@ class TransactionEditableTable extends React.Component {
         }
     }
 
-
-    static resetDataKeyNo(transactions) {
+    static initialDataKey(transactions) {
         for (let i = 0; i < transactions.length; i++) {
             transactions[i]["key"] = i
         }
     }
 
+    static resetDataNo(transactions) {
+        for (let i = 0; i < transactions.length; i++) {
+            transactions[i]["no"] = i + 1
+        }
+    }
+
     handleInsertAbove = (key) => {
-        console.log("handle Insert Above Key: ", key);
-        // let index = transactions.findIndex(item => key === item.key);
-        this.state.transactions.splice(key, 0, TransactionEditableTable.createNewData());
-        TransactionEditableTable.resetDataKeyNo(this.state.transactions);
+        // console.log("handle Insert Above Key: ", key);
+        const {count, transactions} = this.state;
+        let index = transactions.findIndex(item => key === item.key);
+        transactions.splice(index, 0, TransactionEditableTable.createNewData(count));
+        TransactionEditableTable.resetDataNo(transactions);
         this.setState({
-            transactions: this.state.transactions,
-            count: this.state.transactions.length,
-            nextFocus: key
+            transactions: transactions,
+            nextFocus: key,
+            count: count + 1
         });
 
     };
 
     handleInsertBelow = (key) => {
-        console.log("handle Insert Below Key: ", key);
-        // let index = transactions.findIndex(item => key === item.key);
-        this.state.transactions.splice(key + 1, 0, TransactionEditableTable.createNewData());
-        TransactionEditableTable.resetDataKeyNo(this.state.transactions);
+        // console.log("handle Insert Below Key: ", key);
+        const {count, transactions} = this.state;
+        let index = transactions.findIndex(item => key === item.key);
+        transactions.splice(index + 1, 0, TransactionEditableTable.createNewData(count));
+        TransactionEditableTable.resetDataNo(transactions);
         this.setState({
-            transactions: this.state.transactions,
-            count: this.state.transactions.length,
-            nextFocus: key + 1
+            transactions: transactions,
+            nextFocus: key + 1,
+            count: count + 1
         });
     };
 
     handleDelete = (key) => {
-        console.log("handle delete key: ", key);
-        const transactions = [...this.state.transactions];
-        let transactionsNew = transactions.filter(item => item.key !== key);
-        TransactionEditableTable.resetDataKeyNo(transactionsNew);
-        this.state.transactions = transactionsNew;
-        this.setState({transactions: this.state.transactions, nextFocus: null, count: this.state.transactions.length});
+        // console.log("handle delete key: ", key);
+        const transactions = this.state.transactions.filter(item => item.key !== key);
+        TransactionEditableTable.resetDataNo(transactions);
+        this.setState({transactions: transactions, nextFocus: null});
     };
 
     handleAdd = () => {
-        console.log("handle Add");
-        const newData = TransactionEditableTable.createNewData();
-        let transactionsNew = [...transactions, newData];
-        this.state.transactions = TransactionEditableTable.resetDataKeyNo(transactionsNew);
+        const {count} = this.state;
+        const newData = TransactionEditableTable.createNewData(count);
+        let transactions = [...this.state.transactions, newData];
+        TransactionEditableTable.resetDataNo(transactions);
         this.setState({
-            transactions: this.state.transactions,
-            count: this.state.transactions.length,
-            nextFocus: this.state.transactions.length - 1
+            transactions: transactions,
+            nextFocus: this.state.transactions.length - 1,
+            count: count + 1
         });
     };
 
     handleSaveCell = (key, dataIndex, value) => {
-        // console.log("[EditableTable] Handle save cell");
-        const newData = [...this.state.transactions];
-        const index = newData.findIndex(item => key === item.key);
-        newData[index][dataIndex] = value;
-        this.state.transactions = newData;
-        this.setState({transactions: this.state.transactions});
+        // console.log("[TransactionEditableTable] Handle save cell");
+        const {transactions} = this.state;
+        const index = transactions.findIndex(item => key === item.key);
+        transactions[index][dataIndex] = value;
+        this.setState({transactions: transactions});
     };
 
+    sendRequestVerifyAndSaveTransactions(transactions) {
+        Meteor.call('sendVerifyAndSaveRequest', transactions, (err, result) => {
+            console.log("Callback from Meteor method 'sendVerifyAndSaveRequest'");
+            if (err) {
+                console.error(err);
+                let err_msg;
+                try {
+                    err_msg = 'Verify failed, ' + err.error.response.data.msg;
+                }
+                catch (e) {
+                    err_msg = JSON.stringify(err);
+                }
+                iziToast.error({
+                    title: 'Error',
+                    message: err_msg,
+                    position: 'topRight',
+                    timeout: 5000
+                });
+            }
+            else {
+                iziToast.success({
+                    title: 'Success',
+                    message: 'Verify Passed, Saved',
+                    position: 'topRight'
+                });
+                this.setState({isEditing: false})
+            }
+        });
+    }
+
     onClickVerifyAndSave(event) {
-        console.log("[EditableTable] onClickVerifyAndSave");
+        console.log("[TransactionEditableTable] onClickVerifyAndSave");
         console.log(this.state.transactions);
         event.preventDefault();
-        let hasValidationError = true;
-        let firstHelpText = "";
         this.props.form.validateFieldsAndScroll((err, values) => {
             if (!err) {
                 console.log('validate form success', values);
+                this.sendRequestVerifyAndSaveTransactions(this.state.transactions);
             }
             else {
                 console.log("validate form error:", err)
             }
         });
-
-        // if (!hasValidationError) {
-        //     Meteor.call('sendVerifyAndSaveRequest', this.state.transactions, (err, result) => {
-        //         console.log("Callback from Meteor method 'sendVerifyAndSaveRequest'");
-        //         if (err) {
-        //             console.error(err);
-        //             let err_msg;
-        //             try {
-        //                 err_msg = 'Verify failed, ' + err.error.response.data.msg;
-        //             }
-        //             catch (e) {
-        //                 err_msg = JSON.stringify(err);
-        //             }
-        //             iziToast.error({
-        //                 title: 'Error',
-        //                 message: err_msg,
-        //                 position: 'topRight',
-        //                 timeout: 5000
-        //             });
-        //         }
-        //         else {
-        //             iziToast.success({
-        //                 title: 'Success',
-        //                 message: 'Verify Passed, Saved',
-        //                 position: 'topRight'
-        //             });
-        //             this.setState({isEditing: false})
-        //         }
-        //     });
-        //     return true
-        // }
-        // else {
-        //     iziToast.error({
-        //         title: 'Error',
-        //         message: firstHelpText,
-        //         position: 'topRight'
-        //     });
-        //     return false
-        // }
     }
 
     toggleEditingMode() {
