@@ -117,8 +117,8 @@ class TransactionEditableTable extends React.Component {
     }
 
     componentDidUpdate(previousProps, previousState) {
-        console.log("[TransactionEditableTable] componentDidUpdate");
-        console.log(this.state.transactions)
+        // console.log("[TransactionEditableTable] componentDidUpdate");
+        // console.log(this.state.transactions)
         // if (previousProps.transactions !== this.props.transactions) {
         //     this.setState({transactions: this.props.transactions})
         // }
