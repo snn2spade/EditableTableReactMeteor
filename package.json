@@ -10,6 +10,7 @@
   "dependencies": {
     "@babel/runtime": "^7.1.5",
     "antd": "^3.10.9",
+    "bson": "^4.0.1",
     "indexof": "0.0.1",
     "izitoast": "^1.4.0",
     "meteor-node-stubs": "^0.4.1",
